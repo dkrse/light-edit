@@ -12,6 +12,17 @@ and links them statically.
 
 Author: **krse** · License: **MIT**
 
+## Screenshots
+
+![LaTeX in the Dracula theme with visible whitespace](screenshots/01.png)
+
+![LaTeX in the Solarized Light theme](screenshots/02.png)
+
+<p>
+  <img src="screenshots/03.png" width="58%" alt="Main menu">
+  <img src="screenshots/04.png" width="38%" alt="Settings dialog">
+</p>
+
 ## Features
 
 **Files and tabs**
