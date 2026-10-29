@@ -4,6 +4,18 @@ All notable changes to Light Edit are listed here.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project uses [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+* 256 × 256 PNG icon, installed by `make install` next to the SVG icon
+* README section on how Scintilla and Lexilla are downloaded and verified
+
+### Changed
+
+* Scintilla and Lexilla are no longer stored in the repository; the first
+  build downloads them and checks their SHA‑256
+
 ## 1.0.0 (2026-10-29)
 
 First release, written from scratch in C17 with GTK 3, Scintilla 5.6.7 and

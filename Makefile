@@ -89,6 +89,7 @@ APP_ID  = io.github.krse.LightEdit
 install: $(BIN)
 	install -Dm755 $(BIN) $(PREFIX)/bin/light-edit
 	install -Dm644 data/$(APP_ID).svg $(PREFIX)/share/icons/hicolor/scalable/apps/$(APP_ID).svg
+	install -Dm644 data/$(APP_ID).png $(PREFIX)/share/icons/hicolor/256x256/apps/$(APP_ID).png
 	sed 's|^Exec=light-edit|Exec=$(PREFIX)/bin/light-edit|' data/$(APP_ID).desktop \
 		> $(APP_ID).desktop.tmp
 	install -Dm644 $(APP_ID).desktop.tmp $(PREFIX)/share/applications/$(APP_ID).desktop
@@ -99,6 +100,7 @@ install: $(BIN)
 uninstall:
 	rm -f $(PREFIX)/bin/light-edit
 	rm -f $(PREFIX)/share/icons/hicolor/scalable/apps/$(APP_ID).svg
+	rm -f $(PREFIX)/share/icons/hicolor/256x256/apps/$(APP_ID).png
 	rm -f $(PREFIX)/share/applications/$(APP_ID).desktop
 
 run: $(BIN)
