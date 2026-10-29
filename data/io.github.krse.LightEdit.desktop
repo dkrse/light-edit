@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Light Edit
+GenericName=Text Editor
+Comment=Fast UTF-8 text editor with tabs
+Exec=light-edit %F
+Icon=io.github.krse.LightEdit
+Terminal=false
+Categories=Utility;TextEditor;GTK;
+MimeType=text/plain;
+Keywords=text;editor;notepad;
+StartupNotify=true
+StartupWMClass=light-edit
