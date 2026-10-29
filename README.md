@@ -76,9 +76,8 @@ Dependencies on Debian or Ubuntu:
 sudo apt install build-essential libgtk-3-dev curl
 ```
 
-The first `make` downloads Scintilla 5.6.7 and Lexilla 5.5.4 from
-scintilla.org into `vendor/` and verifies their checksums; later builds
-work offline.
+The editing libraries are not stored in this repository; see
+[Scintilla and Lexilla](#scintilla-and-lexilla) below.
 
 Build and run:
 
@@ -96,6 +95,41 @@ make install                  # into ~/.local
 make install PREFIX=/usr/local
 make uninstall
 ```
+
+### Scintilla and Lexilla
+
+The first `make` downloads the two libraries automatically. To fetch them
+on their own, for example before going offline:
+
+```sh
+make vendor
+```
+
+What happens:
+
+1. `curl` downloads the pinned releases:
+   * https://www.scintilla.org/scintilla567.tgz (Scintilla 5.6.7)
+   * https://www.scintilla.org/lexilla554.tgz (Lexilla 5.5.4)
+2. Each archive is checked with `sha256sum`; a wrong checksum stops the build.
+3. They are unpacked into `vendor/scintilla` and `vendor/lexilla`
+   (ignored by git) and built as static libraries.
+
+Later builds use the unpacked copies and need no network.
+
+**Without network access:** download both archives on another machine,
+put them into `vendor/`, then run:
+
+```sh
+cd vendor
+sha256sum scintilla567.tgz lexilla554.tgz   # compare with the Makefile
+tar -xzf scintilla567.tgz && tar -xzf lexilla554.tgz
+touch scintilla/.extracted lexilla/.extracted
+cd .. && make
+```
+
+**Changing versions:** the versions and SHA‑256 checksums are set at the top
+of the `Makefile` (`SCI_VER`, `LEX_VER`, `SCI_SHA`, `LEX_SHA`). After changing
+them run `make distclean && make`.
 
 ## Keyboard shortcuts
 
