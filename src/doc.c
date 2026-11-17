@@ -182,7 +182,10 @@ Doc *doc_new(Win *w) {
     doc_apply_settings(d);
 
     g_signal_connect(d->sci, SCINTILLA_NOTIFY, G_CALLBACK(on_notify), d);
-    gtk_widget_add_events(d->sci, GDK_SCROLL_MASK | GDK_SMOOTH_SCROLL_MASK);
+    /* No GDK_SMOOTH_SCROLL_MASK here: on X11 it turns every wheel notch into a
+       smooth event, which Scintilla ignores, so the text would not scroll.
+       Scintilla enables smooth events itself on Wayland, where it handles them. */
+    gtk_widget_add_events(d->sci, GDK_SCROLL_MASK);
     g_signal_connect(d->sci, "scroll-event", G_CALLBACK(on_scroll), d);
 
     d->page = d->sci;
