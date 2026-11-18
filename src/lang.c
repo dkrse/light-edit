@@ -370,7 +370,11 @@ void lang_apply_for_path(Doc *d, const char *path) {
     lang_apply_base(d);
 
     if (!l) {
-        sci_send(d, SCI_SETILEXER, 0, 0);
+        /* Never pass NULL here: no lexer means "container lexing", Scintilla
+           then asks us via SCN_STYLENEEDED, nothing ever gets styled and
+           idle styling (SC_IDLESTYLING_ALL) spins at 100 % CPU forever.
+           The null lexer styles everything as default and finishes. */
+        sci_send(d, SCI_SETILEXER, 0, (sptr_t)CreateLexer("null"));
         d->lang = "Plain Text";
         return;
     }

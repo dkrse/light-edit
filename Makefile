@@ -43,7 +43,7 @@ SRC = $(wildcard src/*.c)
 OBJ = $(patsubst src/%.c,$(OUT)/%.o,$(SRC))
 BIN = $(OUT)/light-edit
 
-.PHONY: all debug run clean distclean vendor install uninstall
+.PHONY: all debug run test clean distclean vendor install uninstall
 
 all: $(BIN)
 
@@ -102,6 +102,21 @@ uninstall:
 	rm -f $(PREFIX)/share/icons/hicolor/scalable/apps/$(APP_ID).svg
 	rm -f $(PREFIX)/share/icons/hicolor/256x256/apps/$(APP_ID).png
 	rm -f $(PREFIX)/share/applications/$(APP_ID).desktop
+
+# Tests link the app objects (without main) and need a display; a run
+# without one is reported as skipped.
+TEST_SRC = $(wildcard tests/test_*.c)
+TEST_BIN = $(patsubst tests/%.c,$(OUT)/tests/%,$(TEST_SRC))
+APP_OBJ  = $(filter-out $(OUT)/main.o,$(OBJ))
+
+$(OUT)/tests/%: tests/%.c $(APP_OBJ) $(SCI_A) $(LEX_A) | $(SCI_OK) $(LEX_OK)
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -Isrc $< $(APP_OBJ) $(SCI_A) $(LEX_A) -o $@ $(LDLIBS) $(LDEXTRA)
+
+test: $(TEST_BIN)
+	@fail=0; for t in $(TEST_BIN); do echo "== $$t"; $$t; r=$$?; \
+	  if [ $$r -eq 77 ]; then echo "skipped"; elif [ $$r -ne 0 ]; then fail=1; fi; done; \
+	  exit $$fail
 
 run: $(BIN)
 	./$(BIN)
