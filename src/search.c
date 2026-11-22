@@ -215,6 +215,7 @@ static void replace_all(Search *s) {
 static gboolean refresh_cb(gpointer data) {
     Search *s = data;
     s->refresh_id = 0;
+    if (s->w->closing) return G_SOURCE_REMOVE;
     Doc *d = win_current(s->w);
     if (d && search_visible(s)) highlight_all(s, d);
     return G_SOURCE_REMOVE;
@@ -245,8 +246,11 @@ void search_show(Search *s, gboolean replace) {
         sptr_t b = sci_send(d, SCI_GETSELECTIONEND, 0, 0);
         if (b > a && b - a < 512 &&
             sci_send(d, SCI_LINEFROMPOSITION, a, 0) == sci_send(d, SCI_LINEFROMPOSITION, b, 0)) {
+            /* Only the main selection: SCI_GETSELTEXT would join all of a
+               multiple or rectangular selection and overflow this buffer. */
             char *text = g_malloc((size_t)(b - a) + 1);
-            sci_send(d, SCI_GETSELTEXT, 0, (sptr_t)text);
+            struct Sci_TextRangeFull tr = { { a, b }, text };
+            sci_send(d, SCI_GETTEXTRANGEFULL, 0, (sptr_t)&tr);
             gtk_entry_set_text(GTK_ENTRY(s->find), text);   /* triggers search */
             g_free(text);
         }

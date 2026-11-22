@@ -26,7 +26,8 @@ Doc *win_current(Win *w) {
 }
 
 Win *win_from_window(GtkWindow *w) {
-    return w ? g_object_get_data(G_OBJECT(w), "win") : NULL;
+    Win *win = w ? g_object_get_data(G_OBJECT(w), "win") : NULL;
+    return win && !win->closing ? win : NULL;
 }
 
 static char *canonical_path(const char *path) {
@@ -318,7 +319,7 @@ static gboolean on_focus_in(GtkWidget *wid, GdkEvent *ev, gpointer data) {
     (void)wid; (void)ev;
     Win *w = data;
     /* Dialogs shown by the check give focus back; don't loop on that. */
-    if (!w->checking_disk && !w->disk_idle)
+    if (!w->closing && !w->checking_disk && !w->disk_idle)
         w->disk_idle = g_idle_add(check_disk_idle, w);
     return FALSE;
 }
@@ -775,14 +776,24 @@ static gboolean on_delete(GtkWidget *wid, GdkEvent *ev, gpointer data) {
     return FALSE;
 }
 
+/* "destroy" handlers run before GTK tears down the children: the notebook
+   still removes its pages (emitting switch-page) and the editors still send
+   notifications. So only mark the window closing here and free the Win when
+   the window object itself goes away. */
 static void on_destroy(GtkWidget *wid, gpointer data) {
     (void)wid;
     Win *w = data;
-    if (w->disk_idle) g_source_remove(w->disk_idle);
+    w->closing = TRUE;
+    if (w->disk_idle) { g_source_remove(w->disk_idle); w->disk_idle = 0; }
     if (w->settings_save_id) {
         g_source_remove(w->settings_save_id);
+        w->settings_save_id = 0;
         settings_save();
     }
+}
+
+static void win_free(gpointer data) {
+    Win *w = data;
     search_free(w->search);
     g_free(w);
 }
@@ -790,7 +801,7 @@ static void on_destroy(GtkWidget *wid, gpointer data) {
 static void on_switch_page(GtkNotebook *nb, GtkWidget *page, guint num, gpointer data) {
     (void)nb; (void)page; (void)num;
     Win *w = data;
-    if (w->restoring) return;
+    if (w->restoring || w->closing) return;
     ensure_loaded(w, win_current(w));
     /* Matches of the tab we left are dropped; the new one is searched. */
     int np = gtk_notebook_get_n_pages(w->nb);
@@ -872,7 +883,7 @@ Win *win_create(GtkApplication *app) {
     Win *w = g_new0(Win, 1);
     w->app = app;
     w->window = gtk_application_window_new(app);
-    g_object_set_data(G_OBJECT(w->window), "win", w);
+    g_object_set_data_full(G_OBJECT(w->window), "win", w, win_free);
     gtk_window_set_default_size(GTK_WINDOW(w->window), 1000, 700);
 
     g_action_map_add_action_entries(G_ACTION_MAP(w->window), actions,

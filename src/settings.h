@@ -11,6 +11,7 @@ typedef struct {
     int      tab_width;
     gboolean use_spaces;
     gboolean show_whitespace;
+    gboolean show_eol;        /* draw a ↵ mark at line ends */
     gboolean line_numbers;
     gboolean wrap;
     gboolean highlight_line;   /* background on the caret line */

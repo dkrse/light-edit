@@ -94,6 +94,11 @@ static void on_tab_width(GtkSpinButton *b, gpointer data) {
 static gboolean on_switch(GtkSwitch *sw, gboolean state, gpointer data) {
     gboolean *field = g_object_get_data(G_OBJECT(sw), "field");
     *field = state;
+    /* "Show whitespace" and "Show line endings" are exclusive: turning one on
+       turns the other off. */
+    GtkWidget *other = g_object_get_data(G_OBJECT(sw), "exclusive");
+    if (state && other && gtk_switch_get_active(GTK_SWITCH(other)))
+        gtk_switch_set_active(GTK_SWITCH(other), FALSE);
     win_apply_settings(data);
     return FALSE;
 }
@@ -184,7 +189,12 @@ void prefs_show(Win *w) {
     add_row(g, row++, "Tab _width", tabw);
 
     add_row(g, row++, "Insert spaces instead of tabs", switch_for(&settings.use_spaces, w));
-    add_row(g, row++, "Show whitespace", switch_for(&settings.show_whitespace, w));
+    GtkWidget *ws_sw = switch_for(&settings.show_whitespace, w);
+    GtkWidget *eol_sw = switch_for(&settings.show_eol, w);
+    g_object_set_data(G_OBJECT(ws_sw), "exclusive", eol_sw);
+    g_object_set_data(G_OBJECT(eol_sw), "exclusive", ws_sw);
+    add_row(g, row++, "Show whitespace", ws_sw);
+    add_row(g, row++, "Show line endings", eol_sw);
     add_row(g, row++, "Line numbers", switch_for(&settings.line_numbers, w));
     add_row(g, row++, "Highlight current line", switch_for(&settings.highlight_line, w));
     add_row(g, row++, "Word wrap", switch_for(&settings.wrap, w));

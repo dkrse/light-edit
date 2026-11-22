@@ -4,17 +4,31 @@ All notable changes to Light Edit are listed here.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project uses [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.0.5 (2026-11-22)
 
 ### Added
 
 * 256 × 256 PNG icon, installed by `make install` next to the SVG icon
 * README section on how Scintilla and Lexilla are downloaded and verified
+* "Show line endings" setting: a ↵ return arrow drawn at the end of each line,
+  the same shape as in GtkSourceView; exclusive with "Show whitespace", which
+  shows Scintilla's own LF/CRLF marks
+* Tests for file loading and saving, settings, language detection, search and
+  window teardown (`tests/test_core.c`)
 
 ### Changed
 
 * Scintilla and Lexilla are no longer stored in the repository; the first
   build downloads them and checks their SHA‑256
+* Line ending detection on open reads the buffer directly instead of one
+  message per character
+
+### Fixed
+
+* Opening Find with several selections could overflow the buffer used to
+  prefill the search entry
+* Closing the window used freed memory while its tabs were being destroyed
+* A failed save could report the wrong error
 
 ## 1.0.0 (2026-10-29)
 

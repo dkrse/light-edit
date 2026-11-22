@@ -25,14 +25,15 @@ static void set_err(char **err, const char *what, const char *path, int e) {
 static void detect_eol(Doc *d) {
     sptr_t len = sci_send(d, SCI_GETLENGTH, 0, 0);
     sptr_t lim = len < 65536 ? len : 65536;
-    for (sptr_t i = 0; i < lim; i++) {
-        char c = (char)sci_send(d, SCI_GETCHARAT, i, 0);
-        if (c == '\r') {
-            char n = i + 1 < len ? (char)sci_send(d, SCI_GETCHARAT, i + 1, 0) : 0;
+    /* One pointer into the buffer instead of a message per character. */
+    const char *p = (const char *)sci_send(d, SCI_GETRANGEPOINTER, 0, lim);
+    for (sptr_t i = 0; p && i < lim; i++) {
+        if (p[i] == '\r') {
+            char n = i + 1 < lim ? p[i + 1] : (i + 1 < len ? (char)sci_send(d, SCI_GETCHARAT, i + 1, 0) : 0);
             sci_send(d, SCI_SETEOLMODE, n == '\n' ? SC_EOL_CRLF : SC_EOL_CR, 0);
             return;
         }
-        if (c == '\n') break;
+        if (p[i] == '\n') break;
     }
     sci_send(d, SCI_SETEOLMODE, SC_EOL_LF, 0);
 }
@@ -177,8 +178,9 @@ gboolean fileio_save(Doc *d, const char *path, char **err) {
     const char *data = (const char *)sci_send(d, SCI_GETCHARACTERPOINTER, 0, 0);
 
     if (!write_all(fd, data, len) || fsync(fd) != 0) {
-        set_err(err, "Cannot write", target, errno);
+        int e = errno;           /* close() must not clobber the reason */
         close(fd);
+        set_err(err, "Cannot write", target, e);
         unlink(tmp);
         goto out;
     }

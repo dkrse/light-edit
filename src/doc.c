@@ -51,6 +51,7 @@ static void on_uri_dropped(Doc *d, const char *text) {
 static void on_notify(GtkWidget *w, gint id, SCNotification *n, gpointer data) {
     (void)w; (void)id;
     Doc *d = data;
+    if (!d->win || d->win->closing) return;
     gboolean current = d == win_current(d->win);
     switch (n->nmhdr.code) {
     case SCN_SAVEPOINTREACHED:
@@ -114,6 +115,60 @@ static gboolean draw_marks(GtkWidget *sb, cairo_t *cr, gpointer data) {
         cairo_rectangle(cr, 2, py, width - 4, mh);
     }
     cairo_fill(cr);
+    return FALSE;
+}
+
+static void find_text_area(GtkWidget *child, gpointer data) {
+    if (!GTK_IS_SCROLLBAR(child)) *(GtkWidget **)data = child;
+}
+
+/* Draws a "return" arrow after each line that ends with a newline, copied
+   from GtkSourceView (what notes-light shows). */
+static gboolean draw_eols(GtkWidget *area, cairo_t *cr, gpointer data) {
+    Doc *d = data;
+    if (!settings.show_eol || settings.show_whitespace) return FALSE;
+
+    sptr_t first = sci_send(d, SCI_DOCLINEFROMVISIBLE, sci_send(d, SCI_GETFIRSTVISIBLELINE, 0, 0), 0);
+    sptr_t count = sci_send(d, SCI_LINESONSCREEN, 0, 0) + 2;
+    sptr_t lines = sci_send(d, SCI_GETLINECOUNT, 0, 0);
+    int text_h = (int)sci_send(d, SCI_TEXTHEIGHT, 0, 0);
+    int left = 0;
+    for (int m = 0; m < 5; m++) left += (int)sci_send(d, SCI_GETMARGINWIDTHN, m, 0);
+    int height = gtk_widget_get_allocated_height(area);
+
+    cairo_save(cr);
+    cairo_rectangle(cr, left, 0, gtk_widget_get_allocated_width(area) - left, height);
+    cairo_clip(cr);
+    unsigned c = settings_theme()->whitespace;
+    cairo_set_source_rgb(cr, ((c >> 16) & 0xff) / 255.0, ((c >> 8) & 0xff) / 255.0,
+                         (c & 0xff) / 255.0);
+    cairo_set_line_width(cr, 0.8);   /* GtkSourceView stroke width */
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+    cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
+
+    sptr_t vis_lines = 0;
+    for (sptr_t line = first; line < lines - 1 && vis_lines < count; line++) {
+        if (!sci_send(d, SCI_GETLINEVISIBLE, line, 0)) continue;
+        vis_lines += sci_send(d, SCI_WRAPCOUNT, line, 0);
+        sptr_t end = sci_send(d, SCI_GETLINEENDPOSITION, line, 0);
+        int x = (int)sci_send(d, SCI_POINTXFROMPOSITION, 0, end);
+        int y = (int)sci_send(d, SCI_POINTYFROMPOSITION, 0, end);
+        if (y > height) break;
+        if (y + text_h < 0) continue;
+
+        /* Same geometry as GtkSourceView's draw_newline_at_pos(): the cell is
+           as wide as the line is tall, and the arrow spans twice that. */
+        double h = text_h, w = h * 2;
+        double ox = x - 0.5, oy = y - 0.5 + h / 3;
+        cairo_move_to(cr, ox + w * 7 / 8, oy);
+        cairo_rel_line_to(cr, 0, h / 3);
+        cairo_rel_line_to(cr, -w * 6 / 8, 0);
+        cairo_rel_line_to(cr, h / 4, -h / 4);
+        cairo_rel_move_to(cr, -h / 4, h / 4);
+        cairo_rel_line_to(cr, h / 4, h / 4);
+    }
+    cairo_stroke(cr);
+    cairo_restore(cr);
     return FALSE;
 }
 
@@ -193,6 +248,11 @@ Doc *doc_new(Win *w) {
     if (d->marks)
         g_signal_connect_after(d->marks, "draw", G_CALLBACK(draw_marks), d);
 
+    GtkWidget *area = NULL;
+    gtk_container_forall(GTK_CONTAINER(d->sci), find_text_area, &area);
+    if (area)
+        g_signal_connect_after(area, "draw", G_CALLBACK(draw_eols), d);
+
     /* Tab label: name + close button; middle click closes too. */
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
     d->label = gtk_label_new(NULL);
@@ -223,6 +283,7 @@ void doc_apply_settings(Doc *d) {
     d->ln_digits = 0;            /* font may have changed: re-measure */
     update_margin(d);
     if (d->marks) gtk_widget_queue_draw(d->marks);
+    gtk_widget_queue_draw(d->sci);  /* line-end arrows are painted by us */
 }
 
 void doc_apply_font_size(Doc *d) {

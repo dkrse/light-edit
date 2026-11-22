@@ -331,6 +331,8 @@ void lang_apply_base(Doc *d) {
     sci_send(d, SCI_SETELEMENTCOLOUR, SC_ELEMENT_WHITE_SPACE, OPAQUE(t->whitespace));
     sci_send(d, SCI_SETVIEWWS, settings.show_whitespace ? SCWS_VISIBLEALWAYS : SCWS_INVISIBLE, 0);
     sci_send(d, SCI_SETWHITESPACESIZE, 2, 0);
+    /* Show whitespace includes Scintilla's own LF/CRLF marks; the separate
+       "Show line endings" arrow is drawn by doc.c (draw_eols). */
     sci_send(d, SCI_SETVIEWEOL, settings.show_whitespace, 0);
 
     /* Search matches: filled rounded box under the text. */

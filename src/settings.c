@@ -17,6 +17,7 @@ void settings_load(void) {
     settings.tab_width = 4;
     settings.use_spaces = FALSE;
     settings.show_whitespace = FALSE;
+    settings.show_eol = FALSE;
     settings.line_numbers = TRUE;
     settings.wrap = FALSE;
     settings.highlight_line = TRUE;
@@ -63,6 +64,7 @@ void settings_load(void) {
         } while (0)
         LOAD_BOOL("use_spaces", use_spaces);
         LOAD_BOOL("show_whitespace", show_whitespace);
+        LOAD_BOOL("show_eol", show_eol);
         LOAD_BOOL("line_numbers", line_numbers);
         LOAD_BOOL("wrap", wrap);
         LOAD_BOOL("highlight_line", highlight_line);
@@ -80,6 +82,7 @@ void settings_save(void) {
     g_key_file_set_integer(kf, "editor", "tab_width", settings.tab_width);
     g_key_file_set_boolean(kf, "editor", "use_spaces", settings.use_spaces);
     g_key_file_set_boolean(kf, "editor", "show_whitespace", settings.show_whitespace);
+    g_key_file_set_boolean(kf, "editor", "show_eol", settings.show_eol);
     g_key_file_set_boolean(kf, "editor", "line_numbers", settings.line_numbers);
     g_key_file_set_boolean(kf, "editor", "wrap", settings.wrap);
     g_key_file_set_boolean(kf, "editor", "highlight_line", settings.highlight_line);

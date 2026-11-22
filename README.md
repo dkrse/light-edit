@@ -67,6 +67,8 @@ Author: **krse** · License: **MIT**
 * Text intensity: lighter text below 100 %, heavier strokes above it
 * Tab width, spaces or tabs, visible whitespace, line numbers,
   current line highlight, word wrap
+* Line endings shown as a ↵ return arrow (like GtkSourceView editors), as an
+  alternative to visible whitespace; the two options are exclusive
 
 ## Build
 
@@ -86,6 +88,7 @@ make            # release build: build/release/light-edit
 make debug      # debug build with AddressSanitizer and UBSan
 make distclean  # also removes the downloaded libraries
 make run
+make test       # tests in tests/, need a display (skipped without one)
 ```
 
 Install for the current user (binary, icon and menu entry):
@@ -180,6 +183,8 @@ them run `make distclean && make`.
 * Each tab's data is freed together with its editor widget, so closing a tab
   cannot leak memory or free it twice
 * A failed reload keeps the text you already have
+* Window data is freed only after all tabs are torn down, so closing the
+  window never touches freed memory
 * No background threads and no file watchers: changes on disk are checked with
   one `stat()` per file when the window gets focus
 * Large files are styled in idle time, so opening them does not block

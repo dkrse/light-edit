@@ -45,6 +45,7 @@ struct Win {
     guint           disk_idle;      /* pending check source, 0 if none */
     guint           settings_save_id;  /* debounced save after zooming */
     gboolean        restoring;      /* building tabs from the session */
+    gboolean        closing;        /* window destroyed, tabs being torn down */
 };
 
 /* Scintilla takes colours as 0xBBGGRR; write them as 0xRRGGBB here. */
